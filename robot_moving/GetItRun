@@ -1,0 +1,7 @@
+# turn on the keyboard teleoperation topic in Ros
+rosrun turtlesim turtle_teleop_key
+# turn on arduino serial topic
+rosrun rosserial_python serial_node.py /dev/ttyACM0
+
+# surveil the topic published by teleoperation
+tostopic echo turtle_teleop_key
