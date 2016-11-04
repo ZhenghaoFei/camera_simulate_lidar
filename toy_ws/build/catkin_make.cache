@@ -1,0 +1,2 @@
+logger
+-DCATKIN_DEVEL_PREFIX=/home/holly/Documents/camera_simulate_lidar/toy_ws/devel -DCMAKE_INSTALL_PREFIX=/home/holly/Documents/camera_simulate_lidar/toy_ws/install -G Unix Makefiles

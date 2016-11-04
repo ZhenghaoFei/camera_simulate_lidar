@@ -1,0 +1,1 @@
+/usr/bin/c++  -fPIC    -shared -Wl,-soname,libgtest_main.so -o libgtest_main.so CMakeFiles/gtest_main.dir/src/gtest_main.cc.o  -L/home/holly/Documents/camera_simulate_lidar/toy_ws/build/gtest/src -lpthread libgtest.so -lpthread -Wl,-rpath,/home/holly/Documents/camera_simulate_lidar/toy_ws/build/gtest/src:/home/holly/Documents/camera_simulate_lidar/toy_ws/build/gtest 
