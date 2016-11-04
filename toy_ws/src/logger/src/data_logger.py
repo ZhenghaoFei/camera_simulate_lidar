@@ -10,8 +10,10 @@ from std_msgs.msg import String
 import cv2
 
 def callback(compressed_image):
-    timestamp = time.time()
-    filename = str(timestamp) + ".png"
+    now = rospy.get_rostime()
+    # timestamp = time.time()
+    timestamp = str(now.secs) + str(now.nsecs)
+    filename = str(timestamp) + ".jpg"
     image_array = np.fromstring(compressed_image.data, np.uint8)
     image_np = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
     # np.savetxt(filename, image_np, fmt='%i')
