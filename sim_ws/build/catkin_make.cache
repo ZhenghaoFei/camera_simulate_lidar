@@ -1,0 +1,2 @@
+zed-ros-wrapper
+-DCATKIN_DEVEL_PREFIX=/home/holly/Documents/camera_simulate_lidar/sim_ws/devel -DCMAKE_INSTALL_PREFIX=/home/holly/Documents/camera_simulate_lidar/sim_ws/install -G Unix Makefiles

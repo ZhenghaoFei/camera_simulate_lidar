@@ -1,0 +1,7 @@
+\subsubsection usage Usage
+\verbatim
+<node name="zed_ros_wrapper" pkg="zed_ros_wrapper" type="zed_ros_wrapper">
+  <param name="confidence" type="int" value="80" />
+</node>
+\endverbatim
+
