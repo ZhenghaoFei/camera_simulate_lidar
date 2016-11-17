@@ -13,7 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Routine for decoding the CIFAR-10 binary file format."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -28,16 +27,20 @@ import tensorflow as tf
 NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 50
 NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 10
 
-def get_filename_queue(file_numbers):
+IMAGE_HEIGHT = 125
+IMAGE_WIDTH = 672
+IMAGE_DEPTH = 3
+
+def get_filename_queue(file_numbers, data_dir):
   # reconstruce filename for three source
   left_image_filename_list = []
   right_image_filename_list = []
   lidar_filename_list = []
 
   for i in range(len(file_numbers)):
-    left_image_filename = "./data/data1/left" + file_numbers[i] + ".png"
-    right_image_filename = "./data/data1/left" + file_numbers[i] + ".png"
-    lidar_filename = "./data/data1/" + file_numbers[i] + ".txt"
+    left_image_filename = data_dir + "left" + file_numbers[i] + ".png"
+    right_image_filename = data_dir + "right" + file_numbers[i] + ".png"
+    lidar_filename = data_dir + file_numbers[i] + ".txt"
     left_image_filename_list.append(left_image_filename)
     right_image_filename_list.append(right_image_filename)
     lidar_filename_list.append(lidar_filename)
@@ -50,6 +53,7 @@ def get_filename_queue(file_numbers):
   return [left_image_filename_queue, right_image_filename_queue, lidar_filename_queue]
 
 def read_data(left_image_filename_queue, right_image_filename_queue, lidar_filename_queue):
+
 
   # creat three class 
   class Left_Image_Record(object):
@@ -67,10 +71,12 @@ def read_data(left_image_filename_queue, right_image_filename_queue, lidar_filen
   # read and decode image    
   image_reader = tf.WholeFileReader()
   Left_Image.key, left_value = image_reader.read(left_image_filename_queue)
-  Left_Image.image = tf.image.decode_png(left_value)
+  # Left_Image.image = tf.image.decode_png(left_value)
+  Left_Image.uint8image  = tf.reshape(tf.image.decode_png(left_value), [IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_DEPTH])
 
   Right_Image.key, right_value = image_reader.read(right_image_filename_queue)
-  Right_Image.image = tf.image.decode_png(right_value)
+  # Right_Image.image = tf.image.decode_png(right_value)
+  Right_Image.uint8image  = tf.reshape(tf.image.decode_png(right_value), [IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_DEPTH])
 
   # read and decode lidar    
   lidar_reader = tf.TextLineReader()
@@ -127,10 +133,12 @@ def _generate_image_and_label_batch(left_image, right_image, lidar, min_queue_ex
 def get_filenumber(mypath):
     # mypath = './data/data1/'
     data_lidar = sorted(glob.glob(mypath + '*txt'), key=os.path.basename)
+    print (mypath)
+
     file_numbers = []
     for i in range(len(data_lidar)):
         number = data_lidar[i]
-        number = number.replace("../data/data1/","")
+        number = number.replace(mypath,"")
         number = number.replace(".txt","")
         file_numbers.append(number)
     print ("number of sample: ", len(file_numbers))
@@ -163,10 +171,13 @@ def inputs(eval_data, data_dir, batch_size):
   #     raise ValueError('Failed to find file: ' + f)
 
   # Create a queue that produces the file_numbers to read.
-  left_image_filename_queue, right_image_filename_queue, lidar_filename_queue = get_filename_queue(file_numbers)
+
+  left_image_filename_queue, right_image_filename_queue, lidar_filename_queue = get_filename_queue(file_numbers, data_dir)
 
   # Read examples from files in the filename queue.
   Left_Image, Right_Image, Lidar = read_data(left_image_filename_queue, right_image_filename_queue, lidar_filename_queue)
+  left_image = tf.cast(Left_Image.uint8image, tf.float32)
+  right_image = tf.cast(Right_Image.uint8image, tf.float32)
 
   # height = IMAGE_SIZE
   # width = IMAGE_SIZE
@@ -185,5 +196,5 @@ def inputs(eval_data, data_dir, batch_size):
                            min_fraction_of_examples_in_queue)
 
   # Generate a batch of left_images right_images and labels by building up a queue of examples.
-  return _generate_image_and_label_batch(Left_Image.image, Right_Image.image, Lidar.info, 
+  return _generate_image_and_label_batch(left_image, right_image, Lidar.info, 
     min_queue_examples, batch_size, shuffle=False)
