@@ -24,11 +24,14 @@ from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
 
 # Global constants describing the  data set.
-NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 50
-NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 10
+NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 1
+NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 1
 
-IMAGE_HEIGHT = 125
-IMAGE_WIDTH = 672
+IMAGE_HEIGHT = 32
+IMAGE_WIDTH = 128
+
+ORIGINAL_IMAGE_HEIGHT = 125
+ORIGINAL_IMAGE_WIDTH = 672
 IMAGE_DEPTH = 3
 
 def get_filename_queue(file_numbers, data_dir):
@@ -72,11 +75,11 @@ def read_data(left_image_filename_queue, right_image_filename_queue, lidar_filen
   image_reader = tf.WholeFileReader()
   Left_Image.key, left_value = image_reader.read(left_image_filename_queue)
   # Left_Image.image = tf.image.decode_png(left_value)
-  Left_Image.uint8image  = tf.reshape(tf.image.decode_png(left_value), [IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_DEPTH])
+  Left_Image.uint8image  = tf.reshape(tf.image.decode_png(left_value), [ORIGINAL_IMAGE_HEIGHT, ORIGINAL_IMAGE_WIDTH, IMAGE_DEPTH])
 
   Right_Image.key, right_value = image_reader.read(right_image_filename_queue)
   # Right_Image.image = tf.image.decode_png(right_value)
-  Right_Image.uint8image  = tf.reshape(tf.image.decode_png(right_value), [IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_DEPTH])
+  Right_Image.uint8image  = tf.reshape(tf.image.decode_png(right_value), [ORIGINAL_IMAGE_HEIGHT, ORIGINAL_IMAGE_WIDTH, IMAGE_DEPTH])
 
   # read and decode lidar    
   lidar_reader = tf.TextLineReader()
@@ -184,8 +187,10 @@ def inputs(eval_data, data_dir, batch_size):
 
   # # Image processing for evaluation.
   # # Crop the central [height, width] of the image.
-  # resized_image = tf.image.resize_image_with_crop_or_pad(reshaped_image,
-  #                                                        width, height)
+  height = IMAGE_HEIGHT = 32
+  width = IMAGE_WIDTH = 128
+  resized_left_image = tf.image.resize_images(left_image, [height, width])
+  resized_right_image = tf.image.resize_images  (right_image, [height, width])
 
   # # Subtract off the mean and divide by the variance of the pixels.
   # float_image = tf.image.per_image_whitening(resized_image)
@@ -196,5 +201,5 @@ def inputs(eval_data, data_dir, batch_size):
                            min_fraction_of_examples_in_queue)
 
   # Generate a batch of left_images right_images and labels by building up a queue of examples.
-  return _generate_image_and_label_batch(left_image, right_image, Lidar.info, 
+  return _generate_image_and_label_batch(resized_left_image, resized_right_image, Lidar.info, 
     min_queue_examples, batch_size, shuffle=False)
