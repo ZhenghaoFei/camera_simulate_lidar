@@ -27,10 +27,10 @@ import tensorflow as tf
 NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 1
 NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 1
 
-IMAGE_HEIGHT = 32
+IMAGE_HEIGHT = 8
 IMAGE_WIDTH = 128
 
-ORIGINAL_IMAGE_HEIGHT = 125
+ORIGINAL_IMAGE_HEIGHT = 32
 ORIGINAL_IMAGE_WIDTH = 672
 IMAGE_DEPTH = 3
 
@@ -41,8 +41,8 @@ def get_filename_queue(file_numbers, data_dir):
   lidar_filename_list = []
 
   for i in range(len(file_numbers)):
-    left_image_filename = data_dir + "left" + file_numbers[i] + ".png"
-    right_image_filename = data_dir + "right" + file_numbers[i] + ".png"
+    left_image_filename = data_dir +  file_numbers[i] + "left.png"
+    right_image_filename = data_dir +  file_numbers[i] + "right.png"
     lidar_filename = data_dir + file_numbers[i] + ".txt"
     left_image_filename_list.append(left_image_filename)
     right_image_filename_list.append(right_image_filename)
