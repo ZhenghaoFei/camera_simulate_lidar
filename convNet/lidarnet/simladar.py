@@ -65,8 +65,8 @@ NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = simladar_input.NUM_EXAMPLES_PER_EPOCH_FOR_EVAL
 # Constants describing the training process.
 MOVING_AVERAGE_DECAY = 0.9999     # The decay to use for the moving average.
 NUM_EPOCHS_PER_DECAY = 350.0      # Epochs after which learning rate decays.
-LEARNING_RATE_DECAY_FACTOR = 0.1  # Learning rate decay factor.
-INITIAL_LEARNING_RATE = 0.1       # Initial learning rate.
+LEARNING_RATE_DECAY_FACTOR = 0.01  # Learning rate decay factor.
+INITIAL_LEARNING_RATE = 0.01       # Initial learning rate.
 
 # If a model is trained with multiple GPUs, prefix all Op names with tower_name
 # to differentiate the operations. Note that this prefix is removed from the
@@ -178,77 +178,88 @@ def inference(left_images, right_images):
   # If we only ran this model on a single GPU, we could simplify this function
   # by replacing all instances of tf.get_variable() with tf.Variable().
   #
+
+  # Left image
   # conv1
-  with tf.variable_scope('conv1') as scope:
+  with tf.variable_scope('left_conv1') as scope:
     kernel = _variable_with_weight_decay('weights',
                                          shape=[5, 5, 3, 16],
                                          stddev=5e-2,
                                          wd=0.0)
-    print(left_images)
     conv = tf.nn.conv2d(left_images, kernel, [1, 1, 1, 1], padding='SAME')
     biases = _variable_on_cpu('biases', [16], tf.constant_initializer(0.0))
     bias = tf.nn.bias_add(conv, biases)
-    conv1 = tf.nn.relu(bias, name=scope.name)
-    _activation_summary(conv1)
+    left_conv1 = tf.nn.relu(bias, name=scope.name)
+    _activation_summary(left_conv1)
 
-  # # pool1
-  # pool1 = tf.nn.max_pool(conv1, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1],
-  #                        padding='SAME', name='pool1')
-  # norm1
-  norm1 = tf.nn.lrn(conv1, 4, bias=1.0, alpha=0.001 / 9.0, beta=0.75,
-                    name='norm1')
+  left_norm1 = tf.nn.lrn(left_conv1, 4, bias=1.0, alpha=0.001 / 9.0, beta=0.75,
+                    name='left_norm1')
 
   # conv2
-  with tf.variable_scope('conv2') as scope:
+  with tf.variable_scope('left_conv2') as scope:
     kernel = _variable_with_weight_decay('weights',
                                          shape=[5, 5, 16, 16],
                                          stddev=5e-2,
                                          wd=0.0)
-    conv = tf.nn.conv2d(norm1, kernel, [1, 1, 1, 1], padding='SAME')
+    conv = tf.nn.conv2d(left_norm1, kernel, [1, 1, 1, 1], padding='SAME')
     biases = _variable_on_cpu('biases', [16], tf.constant_initializer(0.1))
     bias = tf.nn.bias_add(conv, biases)
-    conv2 = tf.nn.relu(bias, name=scope.name)
-    _activation_summary(conv2)
+    left_conv2 = tf.nn.relu(bias, name=scope.name)
+    _activation_summary(left_conv2)
 
   # norm2
-  norm2 = tf.nn.lrn(conv2, 4, bias=1.0, alpha=0.001 / 9.0, beta=0.75,
-                    name='norm2')
-  # pool2
-  # pool2 = tf.nn.max_pool(norm2, ksize=[1, 3, 3, 1],
-  #                        strides=[1, 2, 2, 1], padding='SAME', name='pool2')
+  left_norm2 = tf.nn.lrn(left_conv2, 4, bias=1.0, alpha=0.001 / 9.0, beta=0.75,
+                    name='left_norm2')
+  # right image
+    # right_conv1
+  with tf.variable_scope('right_conv1') as scope:
+    kernel = _variable_with_weight_decay('weights',
+                                         shape=[5, 5, 3, 16],
+                                         stddev=5e-2,
+                                         wd=0.0)
+    conv = tf.nn.conv2d(right_images, kernel, [1, 1, 1, 1], padding='SAME')
+    biases = _variable_on_cpu('biases', [16], tf.constant_initializer(0.0))
+    bias = tf.nn.bias_add(conv, biases)
+    right_conv1 = tf.nn.relu(bias, name=scope.name)
+    _activation_summary(right_conv1)
 
-  # # local3
-  # with tf.variable_scope('local3') as scope:
-  #   # Move everything into depth so we can perform a single matrix multiply.
-  #   reshape = tf.reshape(pool2, [FLAGS.batch_size, -1])
-  #   dim = reshape.get_shape()[1].value
-  #   weights = _variable_with_weight_decay('weights', shape=[dim, 384],
-  #                                         stddev=0.04, wd=0.004)
-  #   biases = _variable_on_cpu('biases', [384], tf.constant_initializer(0.1))
-  #   local3 = tf.nn.relu(tf.matmul(reshape, weights) + biases, name=scope.name)
-  #   _activation_summary(local3)
+  # norm1
+  right_norm1 = tf.nn.lrn(right_conv1, 4, bias=1.0, alpha=0.001 / 9.0, beta=0.75,
+                    name='right_norm1')
 
-  # # local4
-  # with tf.variable_scope('local4') as scope:
-  #   weights = _variable_with_weight_decay('weights', shape=[384, 192],
-  #                                         stddev=0.04, wd=0.004)
-  #   biases = _variable_on_cpu('biases', [192], tf.constant_initializer(0.1))
-  #   local4 = tf.nn.relu(tf.matmul(local3, weights) + biases, name=scope.name)
-  #   _activation_summary(local4)
+  # conv2
+  with tf.variable_scope('right_conv2') as scope:
+    kernel = _variable_with_weight_decay('weights',
+                                         shape=[5, 5, 16, 16],
+                                         stddev=5e-2,
+                                         wd=0.0)
+    conv = tf.nn.conv2d(right_norm1, kernel, [1, 1, 1, 1], padding='SAME')
+    biases = _variable_on_cpu('biases', [16], tf.constant_initializer(0.1))
+    bias = tf.nn.bias_add(conv, biases)
+    right_conv2 = tf.nn.relu(bias, name=scope.name)
+    _activation_summary(right_conv2)
 
-  # softmax, i.e. softmax(WX + b)
-  with tf.variable_scope('softmax_linear') as scope:
-    reshape = tf.reshape(norm2, [FLAGS.batch_size, -1])
-    dim = reshape.get_shape()[1].value
-    print(norm2)
+  # norm2
+  right_norm2 = tf.nn.lrn(right_conv2, 4, bias=1.0, alpha=0.001 / 9.0, beta=0.75,
+                    name='right_norm2')
+
+  # FC layer 
+  # FC1, i.e. FC1(WX + b)
+  with tf.variable_scope('FC1') as scope:
+    left_reshape = tf.reshape(left_norm2, [FLAGS.batch_size, -1])
+    right_reshape = tf.reshape(right_norm2, [FLAGS.batch_size, -1])
+    conbine = tf.concat(1, [left_reshape, right_reshape]) 
+    print("left_reshape", left_reshape)
+    print("conbine", conbine)
+    dim = conbine.get_shape()[1].value
     weights = _variable_with_weight_decay('weights', [dim, 120],
                                           stddev=1/dim, wd=0.0)
     biases = _variable_on_cpu('biases', [120],
                               tf.constant_initializer(0.0))
-    softmax_linear = tf.add(tf.matmul(reshape, weights), biases, name=scope.name)
-    _activation_summary(softmax_linear)
+    FC1 = tf.add(tf.matmul(conbine, weights), biases, name=scope.name)
+    _activation_summary(FC1)
 
-  return softmax_linear
+  return FC1
 
 
 def loss(logits, lidar_batch):
