@@ -37,7 +37,7 @@ LIDAR_DIM =120
 
 # Constants used for dealing with the files, matches convert_to_records.
 TRAIN_FILE = 'train.tfrecords'
-VALIDATION_FILE = 'validation.tfrecords'
+VALIDATION_FILE = 'validate.tfrecords'
 
 
 def read_and_decode(filename_queue):

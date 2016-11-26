@@ -38,6 +38,22 @@ tf.app.flags.DEFINE_boolean('log_device_placement', False,
                             """Whether to log device placement.""")
 
 
+def do_eval(sess):
+  """Runs one evaluation against the full epoch of data.
+
+  Args:
+    sess: The session in which the model has been trained.
+    eval_correct: The Tensor that returns the number of correct predictions.
+ 
+  """
+  left_batch_eval, right_batch_eval, lidar_batch_eval = simladar.inputs(eval_data=True)
+  logits_eval = simladar.inference(left_batch_eval, right_batch_eval)
+  loss_eval = simladar.eval_loss(logits_eval, lidar_batch_eval)
+
+  # And run one epoch of eval.
+  rmse = sess.run(loss_eval)
+  return rmse
+
 def train():
   """Train CIFAR-10 for a number of steps."""
   with tf.Graph().as_default():
@@ -94,6 +110,8 @@ def train():
                              examples_per_sec, sec_per_batch))
 
       if step % 100 == 0:
+        # eval_rmse = do_eval(sess)
+        # print('eval rmse: ',eval_rmse )
         summary_str = sess.run(summary_op)
         summary_writer.add_summary(summary_str, step)
 

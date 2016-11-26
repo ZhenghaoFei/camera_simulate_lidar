@@ -13,23 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Evaluation for CIFAR-10.
 
-Accuracy:
-cifar10_train.py achieves 83.0% accuracy after 100K steps (256 epochs
-of data) as judged by cifar10_eval.py.
-
-Speed:
-On a single Tesla K40, cifar10_train.py processes a single batch of 128 images
-in 0.25-0.35 sec (i.e. 350 - 600 images /sec). The model reaches ~86%
-accuracy after 100K steps in 8 hours of training time.
-
-Usage:
-Please see the tutorial and website for how to download the CIFAR-10
-data set, compile the program and train the model.
-
-http://tensorflow.org/tutorials/deep_cnn/
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -45,15 +29,15 @@ import simladar
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string('eval_dir', '../data/data_valid/',
+tf.app.flags.DEFINE_string('eval_dir', '../data/data_train/',
                            """Directory where to write event logs.""")
 tf.app.flags.DEFINE_string('eval_data', '../data/data_valid/',
                            """validation data directory""")
-tf.app.flags.DEFINE_string('checkpoint_dir', '../data/data_valid/',
+tf.app.flags.DEFINE_string('checkpoint_dir', '../data/data_train/',
                            """Directory where to read model checkpoints.""")
-tf.app.flags.DEFINE_integer('eval_interval_secs', 60 * 5,
+tf.app.flags.DEFINE_integer('eval_interval_secs',  60 * 5,
                             """How often to run the eval.""")
-tf.app.flags.DEFINE_integer('num_examples', 10000,
+tf.app.flags.DEFINE_integer('num_examples', 500,
                             """Number of examples to run.""")
 tf.app.flags.DEFINE_boolean('run_once', False,
                          """Whether to run eval only once.""")
@@ -91,21 +75,22 @@ def eval_once(saver, summary_writer, valid_op, summary_op):
 
       num_iter = int(math.ceil(FLAGS.num_examples / FLAGS.batch_size))
       # true_count = 0  # Counts the number of correct predictions.
-      accuracy_sum = 0
-      total_sample_count = num_iter * FLAGS.batch_size
+      # accuracy_sum = 0
+      # total_sample_count = num_iter * FLAGS.batch_size
+      sum_rmse = 0
       step = 0
       while step < num_iter and not coord.should_stop():
-        accuracy_sum += sess.run([valid_op])
-        true_count += np.sum(predictions)
+        sum_rmse += sess.run(valid_op)
+        # true_count += np.sum(predictions)
         step += 1
-
+      rmse = float(sum_rmse/num_iter)
       # Compute precision @ 1.
-      accuracy = accuracy_sum / total_sample_count
-      print('%s: accurancy = %.3f' % (datetime.now(), accuracy))
+      # accuracy = accuracy_sum / total_sample_count
+      print('%s: rmse = %.3f' % (datetime.now(), rmse))
 
       summary = tf.Summary()
       summary.ParseFromString(sess.run(summary_op))
-      summary.value.add(tag='accuracy', simple_value=accuracy)
+      summary.value.add(tag='rmse', simple_value=rmse)
       summary_writer.add_summary(summary, global_step)
     except Exception as e:  # pylint: disable=broad-except
       coord.request_stop(e)
@@ -116,7 +101,7 @@ def eval_once(saver, summary_writer, valid_op, summary_op):
 
 def evaluate():
   """Eval CIFAR-10 for a number of steps."""
-  with tf.Graph().as_default() as g:
+  with tf.Graph().as_default(),tf.device('/cpu:0') as g:
     global_step = tf.Variable(0, trainable=False)
     # # Get images and labels for CIFAR-10.
     # eval_data = FLAGS.eval_data == 'test'
@@ -152,9 +137,7 @@ def evaluate():
 
 
 def main(argv=None):  # pylint: disable=unused-argument
-  if tf.gfile.Exists(FLAGS.eval_dir):
-    tf.gfile.DeleteRecursively(FLAGS.eval_dir)
-  tf.gfile.MakeDirs(FLAGS.eval_dir)
+
   evaluate()
 
 

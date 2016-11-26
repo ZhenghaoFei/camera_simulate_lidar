@@ -320,6 +320,55 @@ def _add_loss_summaries(total_loss):
   return loss_averages_op
 
 
+def eval_loss(logits, lidar_batch):
+  """Add L2Loss to all the trainable variables.
+
+  Add summary for "Loss" and "Loss/avg".
+  Args:
+    logits: Logits from inference().
+    labels: Labels from distorted_inputs or inputs(). 1-D tensor
+            of shape [batch_size]
+
+  Returns:
+    Loss tensor of type float.
+  """
+  # Calculate the average cross entropy loss across the batch.
+
+  rmse = tf.sqrt(tf.reduce_mean(tf.square(tf.sub(lidar_batch, logits))))
+  tf.add_to_collection('eval_loss', rmse)
+
+  # The total loss is defined as the cross entropy loss plus all of the weight
+  # decay terms (L2 loss).
+  return tf.add_n(tf.get_collection('eval_losses'), name='eval_losses')
+
+
+def _add_eval_loss_summaries(total_loss):
+  """Add summaries for losses in  model.
+
+  Generates moving average for all losses and associated summaries for
+  visualizing the performance of the network.
+
+  Args:
+    total_loss: Total loss from loss().
+  Returns:
+    loss_averages_op: op for generating moving averages of losses.
+  """
+  # Compute the moving average of all individual losses and the total loss.
+  loss_averages = tf.train.ExponentialMovingAverage(0.9, name='avg')
+  losses = tf.get_collection('eval_losses')
+  loss_averages_op = loss_averages.apply(losses + [total_loss])
+
+  # Attach a scalar summary to all individual losses and the total loss; do the
+  # same for the averaged version of the losses.
+  for l in losses + [total_loss]:
+    # Name each loss as '(raw)' and name the moving average version of the loss
+    # as the original loss name.
+    tf.scalar_summary(l.op.name +' (raw)', l)
+    tf.scalar_summary(l.op.name, loss_averages.average(l))
+
+  return loss_averages_op
+
+
 def train(total_loss, global_step):
   """Train CIFAR-10 model.
 
