@@ -29,7 +29,7 @@ import simladar
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string('train_dir', '../data/data1/',
+tf.app.flags.DEFINE_string('train_dir', '../data/data_train/',
                            """Directory where to write event logs """
                            """and checkpoint.""")
 tf.app.flags.DEFINE_integer('max_steps', 1000000,

@@ -50,7 +50,7 @@ FLAGS = tf.app.flags.FLAGS
 # Basic model parameters.
 tf.app.flags.DEFINE_integer('batch_size', 32,
                             """Number of images to process in a batch.""")
-tf.app.flags.DEFINE_string('data_dir', '../data/data1/',
+tf.app.flags.DEFINE_string('data_dir', '../data/data_train/',
                            """Path to the data directory.""")
 tf.app.flags.DEFINE_boolean('use_fp16', False,
                             """Train the model using fp16.""")

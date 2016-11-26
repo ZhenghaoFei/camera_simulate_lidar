@@ -25,7 +25,7 @@ import tensorflow as tf
 from scipy import misc
 
 
-tf.app.flags.DEFINE_string('directory', '../data/data1/',
+tf.app.flags.DEFINE_string('directory', '../data/data_train/',
                            'Directory to download data files and write the '
                            'converted result')
 tf.app.flags.DEFINE_string('directory_valid', '../data/data_valid/',
