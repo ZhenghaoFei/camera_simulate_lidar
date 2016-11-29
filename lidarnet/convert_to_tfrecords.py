@@ -25,10 +25,10 @@ import tensorflow as tf
 from scipy import misc
 
 
-tf.app.flags.DEFINE_string('directory', '../data/data_train/',
+tf.app.flags.DEFINE_string('directory', '../data/train/data_train/',
                            'Directory to download data files and write the '
                            'converted result')
-tf.app.flags.DEFINE_string('directory_valid', '../data/data_valid/',
+tf.app.flags.DEFINE_string('directory_valid', '../data/train/data_valid/',
                            'Directory to download data files and write the '
                            'converted result')
 tf.app.flags.DEFINE_integer('validation_size', 100,
@@ -129,24 +129,38 @@ def convert_to(left_images, right_images, lidar_labels, name):
 
 
 def main(argv):
-  # Get the data.
+  # Get first half of training  data.
   file_numbers = get_filenumber(FLAGS.directory)
-  file_numbers_valid = get_filenumber(FLAGS.directory_valid)
-
-  left_image_filename_list, right_image_filename_list, lidar_filename_list = get_filename_list(file_numbers, FLAGS.directory)
-  left_image_filename_list_valid, right_image_filename_list_valid, lidar_filename_list_valid = get_filename_list(file_numbers_valid, FLAGS.directory_valid)
+  half = int(len(file_numbers)/2)
+  file_numbers1 = file_numbers[:half]
+  print('train1 size: ', len(file_numbers1))
+  left_image_filename_list1, right_image_filename_list1, lidar_filename_list1 = get_filename_list(file_numbers1, FLAGS.directory)
   # Extract it into numpy arrays.
-  left_images = image_filename_list_to_nparray(left_image_filename_list)
-  right_images = image_filename_list_to_nparray(right_image_filename_list)
-  lidar_labels = lidar_filename_list_to_nparray(lidar_filename_list)
+  left_images = image_filename_list_to_nparray(left_image_filename_list1)
+  right_images = image_filename_list_to_nparray(right_image_filename_list1)
+  lidar_labels = lidar_filename_list_to_nparray(lidar_filename_list1)
+  convert_to(left_images, right_images, lidar_labels, 'train1')
+  print('train1 finished')
 
+  # Get second half of training  data.
+  file_numbers2 = file_numbers[half:]
+  print('train2 size: ', len(file_numbers2))
+  left_image_filename_list2, right_image_filename_list2, lidar_filename_list2 = get_filename_list(file_numbers2, FLAGS.directory)
+  # Extract it into numpy arrays.
+  left_images = image_filename_list_to_nparray(left_image_filename_list2)
+  right_images = image_filename_list_to_nparray(right_image_filename_list2)
+  lidar_labels = lidar_filename_list_to_nparray(lidar_filename_list2)
+  convert_to(left_images, right_images, lidar_labels, 'train2')
+  print('train2 finished')
+
+  # Get validate  data.
+  file_numbers_valid = get_filenumber(FLAGS.directory_valid)
+  left_image_filename_list_valid, right_image_filename_list_valid, lidar_filename_list_valid = get_filename_list(file_numbers_valid, FLAGS.directory_valid)
   left_images_valid = image_filename_list_to_nparray(left_image_filename_list_valid)
   right_images_valid = image_filename_list_to_nparray(right_image_filename_list_valid)
   lidar_labels_valid = lidar_filename_list_to_nparray(lidar_filename_list_valid)
-
-  # Convert to Examples and write the result to TFRecords.
-  convert_to(left_images, right_images, lidar_labels, 'train')
   convert_to(left_images_valid, right_images_valid, lidar_labels_valid, 'validate')
+  print('validate finished')
 
 if __name__ == '__main__':
   tf.app.run()

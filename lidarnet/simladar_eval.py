@@ -29,11 +29,11 @@ import simladar
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string('eval_dir', '../data/data_train/',
+tf.app.flags.DEFINE_string('eval_dir', '../data/train/data_train/',
                            """Directory where to write event logs.""")
-tf.app.flags.DEFINE_string('eval_data', '../data/data_valid/',
+tf.app.flags.DEFINE_string('eval_data', '../data/train/data_valid/',
                            """validation data directory""")
-tf.app.flags.DEFINE_string('checkpoint_dir', '../data/data_train/',
+tf.app.flags.DEFINE_string('checkpoint_dir', '../data/train/data_train/',
                            """Directory where to read model checkpoints.""")
 tf.app.flags.DEFINE_integer('eval_interval_secs',  60 * 5,
                             """How often to run the eval.""")
@@ -98,10 +98,11 @@ def eval_once(saver, summary_writer, valid_op, summary_op):
     coord.request_stop()
     coord.join(threads, stop_grace_period_secs=10)
 
-
 def evaluate():
   """Eval CIFAR-10 for a number of steps."""
-  with tf.Graph().as_default(),tf.device('/cpu:0') as g:
+  # with tf.Graph().as_default(),tf.device('/cpu:0') as g:
+  with tf.device('/cpu:0') as g:
+
     global_step = tf.Variable(0, trainable=False)
     # # Get images and labels for CIFAR-10.
     # eval_data = FLAGS.eval_data == 'test'
