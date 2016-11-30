@@ -24,11 +24,11 @@ from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
 
 # Global constants describing the  data set.
-NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 100
-NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 100
+NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 34000
+NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 1500
 
-IMAGE_HEIGHT = 16
-IMAGE_WIDTH = 64
+IMAGE_HEIGHT = 32
+IMAGE_WIDTH = 128
 
 ORIGINAL_IMAGE_HEIGHT = 128
 ORIGINAL_IMAGE_WIDTH = 672

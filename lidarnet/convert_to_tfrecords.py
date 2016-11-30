@@ -141,7 +141,7 @@ def main(argv):
   lidar_labels = lidar_filename_list_to_nparray(lidar_filename_list1)
   convert_to(left_images, right_images, lidar_labels, 'train1')
   print('train1 finished')
-
+  del(left_images, right_images, lidar_labels)
   # Get second half of training  data.
   file_numbers2 = file_numbers[half:]
   print('train2 size: ', len(file_numbers2))
