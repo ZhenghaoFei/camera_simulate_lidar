@@ -48,9 +48,9 @@ import simladar_input
 FLAGS = tf.app.flags.FLAGS
 
 # Basic model parameters.
-tf.app.flags.DEFINE_integer('batch_size', 32,
+tf.app.flags.DEFINE_integer('batch_size', 16,
                             """Number of images to process in a batch.""")
-tf.app.flags.DEFINE_string('data_dir', '../data/data_train/',
+tf.app.flags.DEFINE_string('data_dir', '../data/train/data_train/',
                            """Path to the data directory.""")
 tf.app.flags.DEFINE_boolean('use_fp16', False,
                             """Train the model using fp16.""")
@@ -64,7 +64,7 @@ NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = simladar_input.NUM_EXAMPLES_PER_EPOCH_FOR_EVAL
 
 # Constants describing the training process.
 MOVING_AVERAGE_DECAY = 0.9999     # The decay to use for the moving average.
-NUM_EPOCHS_PER_DECAY = 35000.0      # Epochs after which learning rate decays.
+NUM_EPOCHS_PER_DECAY = 10000.0      # Epochs after which learning rate decays.
 LEARNING_RATE_DECAY_FACTOR = 0.1  # Learning rate decay factor.
 INITIAL_LEARNING_RATE = 0.01      # Initial learning rate.
 
@@ -320,57 +320,8 @@ def _add_loss_summaries(total_loss):
   return loss_averages_op
 
 
-def eval_loss(logits, lidar_batch):
-  """Add L2Loss to all the trainable variables.
-
-  Add summary for "Loss" and "Loss/avg".
-  Args:
-    logits: Logits from inference().
-    labels: Labels from distorted_inputs or inputs(). 1-D tensor
-            of shape [batch_size]
-
-  Returns:
-    Loss tensor of type float.
-  """
-  # Calculate the average cross entropy loss across the batch.
-
-  rmse = tf.sqrt(tf.reduce_mean(tf.square(tf.sub(lidar_batch, logits))))
-  tf.add_to_collection('eval_loss', rmse)
-
-  # The total loss is defined as the cross entropy loss plus all of the weight
-  # decay terms (L2 loss).
-  return tf.add_n(tf.get_collection('eval_losses'), name='eval_losses')
-
-
-def _add_eval_loss_summaries(total_loss):
-  """Add summaries for losses in  model.
-
-  Generates moving average for all losses and associated summaries for
-  visualizing the performance of the network.
-
-  Args:
-    total_loss: Total loss from loss().
-  Returns:
-    loss_averages_op: op for generating moving averages of losses.
-  """
-  # Compute the moving average of all individual losses and the total loss.
-  loss_averages = tf.train.ExponentialMovingAverage(0.9, name='avg')
-  losses = tf.get_collection('eval_losses')
-  loss_averages_op = loss_averages.apply(losses + [total_loss])
-
-  # Attach a scalar summary to all individual losses and the total loss; do the
-  # same for the averaged version of the losses.
-  for l in losses + [total_loss]:
-    # Name each loss as '(raw)' and name the moving average version of the loss
-    # as the original loss name.
-    tf.scalar_summary(l.op.name +' (raw)', l)
-    tf.scalar_summary(l.op.name, loss_averages.average(l))
-
-  return loss_averages_op
-
-
 def train(total_loss, global_step):
-  """Train CIFAR-10 model.
+  """Train  model.
 
   Create an optimizer and apply to all trainable variables. Add moving
   average for all trainable variables.
@@ -424,21 +375,3 @@ def train(total_loss, global_step):
 
   return train_op
 
-
-# def maybe_download_and_extract():
-#   """Download and extract the tarball from Alex's website."""
-#   dest_directory = FLAGS.data_dir
-#   if not os.path.exists(dest_directory):
-#     os.makedirs(dest_directory)
-#   filename = DATA_URL.split('/')[-1]
-#   filepath = os.path.join(dest_directory, filename)
-#   if not os.path.exists(filepath):
-#     def _progress(count, block_size, total_size):
-#       sys.stdout.write('\r>> Downloading %s %.1f%%' % (filename,
-#           float(count * block_size) / float(total_size) * 100.0))
-#       sys.stdout.flush()
-#     filepath, _ = urllib.request.urlretrieve(DATA_URL, filepath, _progress)
-#     print()
-#     statinfo = os.stat(filepath)
-#     print('Successfully downloaded', filename, statinfo.st_size, 'bytes.')
-#     tarfile.open(filepath, 'r:gz').extractall(dest_directory)

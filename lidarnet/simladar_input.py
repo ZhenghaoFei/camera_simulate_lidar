@@ -24,11 +24,11 @@ from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
 
 # Global constants describing the  data set.
-NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 100
-NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 100
+NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 34000
+NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 1500
 
-IMAGE_HEIGHT = 16
-IMAGE_WIDTH = 64
+IMAGE_HEIGHT = 32
+IMAGE_WIDTH = 128
 
 ORIGINAL_IMAGE_HEIGHT = 128
 ORIGINAL_IMAGE_WIDTH = 672
@@ -36,7 +36,9 @@ IMAGE_DEPTH = 3
 LIDAR_DIM =120
 
 # Constants used for dealing with the files, matches convert_to_records.
-TRAIN_FILE = 'train.tfrecords'
+TRAIN1_FILE = 'train1.tfrecords'
+TRAIN2_FILE = 'train2.tfrecords'
+
 VALIDATION_FILE = 'validate.tfrecords'
 
 
@@ -133,14 +135,19 @@ def inputs(eval_data, data_dir, batch_size):
     labels: Labels. 1D tensor of [batch_size] size.
   """
   if not eval_data:
-    filename = os.path.join(data_dir, TRAIN_FILE)
+    filename1 = os.path.join(data_dir, TRAIN1_FILE)
+    filename2 = os.path.join(data_dir, TRAIN2_FILE)
     num_examples_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN
   else:
     filename = os.path.join(data_dir, VALIDATION_FILE)
     num_examples_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_EVAL
 
   with tf.name_scope('input'):
-    filename_queue = tf.train.string_input_producer([filename], num_epochs=None)
+    if not eval_data:
+      filename_queue = tf.train.string_input_producer([filename1,filename2], num_epochs=None)
+    else:
+      filename_queue = tf.train.string_input_producer([filename], num_epochs=None)
+
     resized_image_left, resized_image_right, lidar = read_and_decode(filename_queue)
 
     # Ensure that the random shuffling has good mixing properties.
@@ -150,4 +157,4 @@ def inputs(eval_data, data_dir, batch_size):
 
     # Generate a batch of left_images right_images and labels by building up a queue of examples.
     return _generate_image_and_label_batch(resized_image_left, resized_image_right, lidar, 
-      min_queue_examples, batch_size, shuffle=False)
+      min_queue_examples, batch_size, shuffle=True)
