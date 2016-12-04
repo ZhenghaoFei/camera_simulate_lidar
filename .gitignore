@@ -2,5 +2,10 @@
 data/
 *.pyc
 *.png
-
+*.aux
+*.bbl
+*.blg
+*.log
+*.pdf
+*.syntex.gz
 
