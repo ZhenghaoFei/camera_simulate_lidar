@@ -29,11 +29,11 @@ import simladar
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string('eval_dir', '../data/train/data_train/',
+tf.app.flags.DEFINE_string('eval_dir', '../data/data_train/',
                            """Directory where to write event logs.""")
-tf.app.flags.DEFINE_string('eval_data', '../data/train/data_valid/',
+tf.app.flags.DEFINE_string('eval_data', '../data/data_valid/',
                            """validation data directory""")
-tf.app.flags.DEFINE_string('checkpoint_dir', '../data/train/data_train/',
+tf.app.flags.DEFINE_string('checkpoint_dir', '../data/data_train/',
                            """Directory where to read model checkpoints.""")
 tf.app.flags.DEFINE_integer('eval_interval_secs',  60 * 5,
                             """How often to run the eval.""")

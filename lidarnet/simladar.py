@@ -48,9 +48,9 @@ import simladar_input
 FLAGS = tf.app.flags.FLAGS
 
 # Basic model parameters.
-tf.app.flags.DEFINE_integer('batch_size', 16,
+tf.app.flags.DEFINE_integer('batch_size', 32,
                             """Number of images to process in a batch.""")
-tf.app.flags.DEFINE_string('data_dir', '../data/train/data_train/',
+tf.app.flags.DEFINE_string('data_dir', '../data/data_train/',
                            """Path to the data directory.""")
 tf.app.flags.DEFINE_boolean('use_fp16', False,
                             """Train the model using fp16.""")
@@ -191,6 +191,18 @@ def inference(left_images, right_images):
     bias = tf.nn.bias_add(conv, biases)
     left_conv1 = tf.nn.relu(bias, name=scope.name)
     _activation_summary(left_conv1)
+
+    with tf.variable_scope('visual_left_conv1'):
+      # scale weights to [0 1], type is still float
+      x_min = tf.reduce_min(kernel)
+      x_max = tf.reduce_max(kernel)
+      kernel_0_to_1 = (kernel - x_min) / (x_max - x_min)
+
+      # to tf.image_summary format [batch_size, height, width, channels]
+      kernel_transposed = tf.transpose (kernel_0_to_1, [3, 0, 1, 2])
+
+      # this will display random 3 filters from the 64 in conv1
+      tf.image_summary('conv1/filters', kernel_transposed, max_images=3)
 
   left_norm1 = tf.nn.lrn(left_conv1, 4, bias=1.0, alpha=0.001 / 9.0, beta=0.75,
                     name='left_norm1')
