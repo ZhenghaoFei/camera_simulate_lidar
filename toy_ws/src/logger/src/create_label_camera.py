@@ -80,9 +80,10 @@ scanlabels_chosen = scan_label_multi(scanlabels,leftimg_labels, scanlabels_chose
 # 	np.savetxt(txtname, scan_data[None,:], delimiter=',',fmt='%.10f',newline=' ')
 # 	print txtname
 
+
 # save training data:
 path = './data_train/'
-for num in leftimg_labels:
+for i, num in enumerate(leftimg_labels):
 	if num in rightimg_labels and num in scanlabels_chosen:
 		scan_src = './'+str(num)+'.txt'
 		leftimg_src = './'+str(num)+'left.png'
@@ -95,27 +96,6 @@ for num in leftimg_labels:
 		move(rightimg_src, rightimg_dest)
 		print num, "saved"
 
-# split files from train to validate
-path = './data_valid/'
-# print len(imglabels)
-leftimg_labels  = img_label_left(leftimg_labels)
-rightimg_labels = img_label_right(rightimg_labels)	
-scanlabels = scan_label(scanlabels)
-
-for i,num in enumerate(leftimg_labels):
-	if i<1500:
-		scan_src = './data_train'+str(num)+'.txt'
-		leftimg_src = './data_train'+str(num)+'left.png'
-		rightimg_src = './data_train'+str(num)+'right.png'
-		scan_dest = path + scan_src
-		leftimg_dest = path + leftimg_src
-		rightimg_dest = path + rightimg_src
-		move(scan_src, scan_dest)
-		move(leftimg_src, leftimg_dest)
-		move(rightimg_src, rightimg_dest)
-		print num, "saved"
-	else:
-		break
 
 # double check on training data
 scan_num = len(glob.glob1('./data_train',"*.txt"))
@@ -126,13 +106,6 @@ if scan_num==left_num and scan_num==right_num:
 	print "Lable Pair success!"
 	print scan_num," training pairs are obtained!"
 
-# double check on validation data
-scan_num_valid  = len(glob.glob1('./data_valid',"*.txt"))
-left_num_valid  = len(glob.glob1('./data_valid',"*left.png"))
-right_num_valid = len(glob.glob1('./data_valid',"*right.png"))
 
-if scan_num_valid==left_num_valid and scan_num_valid==right_num_valid:
-	print "Lable Pair success!"
-	print scan_num," valid pairs are obtained!"
 
 
