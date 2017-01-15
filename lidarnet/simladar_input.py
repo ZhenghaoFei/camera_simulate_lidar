@@ -27,8 +27,8 @@ import tensorflow as tf
 NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 13957
 NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 1550
 
-IMAGE_HEIGHT = 32
-IMAGE_WIDTH = 128
+IMAGE_HEIGHT = 16
+IMAGE_WIDTH = 64
 
 ORIGINAL_IMAGE_HEIGHT = 128
 ORIGINAL_IMAGE_WIDTH = 672
@@ -38,6 +38,7 @@ LIDAR_DIM =110
 # Constants used for dealing with the files, matches convert_to_records.
 TRAIN1_FILE = 'train1.tfrecords'
 TRAIN2_FILE = 'train2.tfrecords'
+TRAIN_FILE = 'train.tfrecords'
 
 VALIDATION_FILE = 'validate.tfrecords'
 

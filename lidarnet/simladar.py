@@ -48,7 +48,11 @@ import simladar_input
 FLAGS = tf.app.flags.FLAGS
 
 # Basic model parameters.
+<<<<<<< HEAD
 tf.app.flags.DEFINE_integer('batch_size', 64  ,
+=======
+tf.app.flags.DEFINE_integer('batch_size', 32,
+>>>>>>> 5f755477b32766608f23f7658213827d163a285a
                             """Number of images to process in a batch.""")
 tf.app.flags.DEFINE_string('data_dir', '../data/data_train/',
                            """Path to the data directory.""")

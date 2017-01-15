@@ -31,9 +31,6 @@ tf.app.flags.DEFINE_string('directory', '../data/data_train/',
 tf.app.flags.DEFINE_string('directory_valid', '../data/data_valid/',
                            'Directory to download data files and write the '
                            'converted result')
-tf.app.flags.DEFINE_integer('validation_size', 100,
-                            'Number of examples to separate from the training '
-                            'data for the validation set.')
 FLAGS = tf.app.flags.FLAGS
 
 
