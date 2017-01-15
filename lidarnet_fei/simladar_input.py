@@ -24,13 +24,13 @@ from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
 
 # Global constants describing the  data set.
-NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 13957
-NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 1550
+NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 34000
+NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 1500
 
-IMAGE_HEIGHT = 32
-IMAGE_WIDTH = 128
+IMAGE_HEIGHT = 16
+IMAGE_WIDTH = 64
 
-ORIGINAL_IMAGE_HEIGHT = 128
+ORIGINAL_IMAGE_HEIGHT = 170
 ORIGINAL_IMAGE_WIDTH = 672
 IMAGE_DEPTH = 3
 LIDAR_DIM =110
@@ -38,6 +38,10 @@ LIDAR_DIM =110
 # Constants used for dealing with the files, matches convert_to_records.
 TRAIN1_FILE = 'train1.tfrecords'
 TRAIN2_FILE = 'train2.tfrecords'
+TRAIN3_FILE = 'train3.tfrecords'
+TRAIN4_FILE = 'train4.tfrecords'
+
+# TRAIN_FILE = 'train.tfrecords'
 
 VALIDATION_FILE = 'validate.tfrecords'
 
@@ -116,8 +120,8 @@ def _generate_image_and_label_batch(left_image, right_image, lidar, min_queue_ex
         capacity=min_queue_examples + 3 * batch_size)
 
   # Display the training images in the visualizer.
-  tf.image_summary('left_images', left_batch)
-  tf.image_summary('right_images', right_batch)
+  tf.summary.image('left_images', left_batch)
+  tf.summary.image('right_images', right_batch)
 
   return left_batch, right_batch, lidar_batch
 
@@ -126,7 +130,7 @@ def inputs(eval_data, data_dir, batch_size):
   """Construct input for  evaluation using the Reader ops.
 
   Args:
-    eval_data: bool, indicating if one should use the train or eval data set.
+      eval_data: bool, indicating if one should use the train or eval data set.
     data_dir: Path to the data directory.
     batch_size: Number of images per batch.
 
@@ -137,6 +141,9 @@ def inputs(eval_data, data_dir, batch_size):
   if not eval_data:
     filename1 = os.path.join(data_dir, TRAIN1_FILE)
     filename2 = os.path.join(data_dir, TRAIN2_FILE)
+    filename3 = os.path.join(data_dir, TRAIN3_FILE)
+    filename4 = os.path.join(data_dir, TRAIN4_FILE)
+
     num_examples_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN
   else:
     filename = os.path.join(data_dir, VALIDATION_FILE)
@@ -144,6 +151,7 @@ def inputs(eval_data, data_dir, batch_size):
 
   with tf.name_scope('input'):
     if not eval_data:
+      # filename_queue = tf.train.string_input_producer([filename1,filename2,filename3,filename4], num_epochs=None)
       filename_queue = tf.train.string_input_producer([filename1,filename2], num_epochs=None)
     else:
       filename_queue = tf.train.string_input_producer([filename], num_epochs=None)

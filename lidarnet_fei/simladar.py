@@ -48,7 +48,7 @@ import simladar_input
 FLAGS = tf.app.flags.FLAGS
 
 # Basic model parameters.
-tf.app.flags.DEFINE_integer('batch_size', 64  ,
+tf.app.flags.DEFINE_integer('batch_size', 32,
                             """Number of images to process in a batch.""")
 tf.app.flags.DEFINE_string('data_dir', '../data/data_train/',
                            """Path to the data directory.""")
@@ -60,6 +60,8 @@ tf.app.flags.DEFINE_boolean('use_fp16', False,
 # NUM_CLASSES = cifar10_input.NUM_CLASSES
 NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = simladar_input.NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN
 NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = simladar_input.NUM_EXAMPLES_PER_EPOCH_FOR_EVAL
+
+
 
 
 # Constants describing the training process.
@@ -88,8 +90,8 @@ def _activation_summary(x):
   # Remove 'tower_[0-9]/' from the name in case this is a multi-GPU training
   # session. This helps the clarity of presentation on tensorboard.
   tensor_name = re.sub('%s_[0-9]*/' % TOWER_NAME, '', x.op.name)
-  tf.histogram_summary(tensor_name + '/activations', x)
-  tf.scalar_summary(tensor_name + '/sparsity', tf.nn.zero_fraction(x))
+  tf.summary.histogram(tensor_name + '/activations', x)
+  tf.summary.scalar(tensor_name + '/sparsity', tf.nn.zero_fraction(x))
 
 
 def _variable_on_cpu(name, shape, initializer):
@@ -164,11 +166,12 @@ def inputs(eval_data=False):
   return left_batch, right_batch, lidar_batch
 
 
-def inference(left_images, right_images):
+def inference(left_images, right_images, keep_prob):
   """Build the Sim Lidar Net model.
 
   Args:
     left & right images: Images returned from inputs().
+    keep_pro: probability of keep in dropout
 
   Returns:
     Logits.
@@ -183,11 +186,11 @@ def inference(left_images, right_images):
   # conv1
   with tf.variable_scope('left_conv1') as scope:
     kernel = _variable_with_weight_decay('weights',
-                                         shape=[7, 7, 3, 8],
+                                         shape=[5, 5, 3, 16],
                                          stddev=5e-2,
                                          wd=0.0)
     conv = tf.nn.conv2d(left_images, kernel, [1, 1, 1, 1], padding='SAME')
-    biases = _variable_on_cpu('biases', [8], tf.constant_initializer(0.0))
+    biases = _variable_on_cpu('biases', [16], tf.constant_initializer(0.0))
     bias = tf.nn.bias_add(conv, biases)
     left_conv1 = tf.nn.relu(bias, name=scope.name)
     _activation_summary(left_conv1)
@@ -198,11 +201,11 @@ def inference(left_images, right_images):
       x_max = tf.reduce_max(kernel)
       kernel_0_to_1 = (kernel - x_min) / (x_max - x_min)
 
-      # to tf.image_summary format [batch_size, height, width, channels]
+      # to tf.summary.image format [batch_size, height, width, channels]
       kernel_transposed = tf.transpose (kernel_0_to_1, [3, 0, 1, 2])
 
       # this will display random 3 filters from the 64 in conv1
-      tf.image_summary('conv1/filters', kernel_transposed, max_images=3)
+      tf.summary.image('conv1/filters', kernel_transposed, max_outputs=3)
 
   left_norm1 = tf.nn.lrn(left_conv1, 4, bias=1.0, alpha=0.001 / 9.0, beta=0.75,
                     name='left_norm1')
@@ -210,11 +213,11 @@ def inference(left_images, right_images):
   # conv2
   with tf.variable_scope('left_conv2') as scope:
     kernel = _variable_with_weight_decay('weights',
-                                         shape=[7, 7, 8, 8],
+                                         shape=[5, 5, 16, 16],
                                          stddev=5e-2,
                                          wd=0.0)
     conv = tf.nn.conv2d(left_norm1, kernel, [1, 1, 1, 1], padding='SAME')
-    biases = _variable_on_cpu('biases', [8], tf.constant_initializer(0.1))
+    biases = _variable_on_cpu('biases', [16], tf.constant_initializer(0.1))
     bias = tf.nn.bias_add(conv, biases)
     left_conv2 = tf.nn.relu(bias, name=scope.name)
     _activation_summary(left_conv2)
@@ -226,11 +229,11 @@ def inference(left_images, right_images):
     # right_conv1
   with tf.variable_scope('right_conv1') as scope:
     kernel = _variable_with_weight_decay('weights',
-                                         shape=[7, 7, 3, 8],
+                                         shape=[5, 5, 3, 16],
                                          stddev=5e-2,
                                          wd=0.0)
     conv = tf.nn.conv2d(right_images, kernel, [1, 1, 1, 1], padding='SAME')
-    biases = _variable_on_cpu('biases', [8], tf.constant_initializer(0.0))
+    biases = _variable_on_cpu('biases', [16], tf.constant_initializer(0.0))
     bias = tf.nn.bias_add(conv, biases)
     right_conv1 = tf.nn.relu(bias, name=scope.name)
     _activation_summary(right_conv1)
@@ -242,11 +245,11 @@ def inference(left_images, right_images):
   # conv2
   with tf.variable_scope('right_conv2') as scope:
     kernel = _variable_with_weight_decay('weights',
-                                         shape=[7, 7, 8, 8],
+                                         shape=[5, 5, 16, 16],
                                          stddev=5e-2,
                                          wd=0.0)
     conv = tf.nn.conv2d(right_norm1, kernel, [1, 1, 1, 1], padding='SAME')
-    biases = _variable_on_cpu('biases', [8], tf.constant_initializer(0.1))
+    biases = _variable_on_cpu('biases', [16], tf.constant_initializer(0.1))
     bias = tf.nn.bias_add(conv, biases)
     right_conv2 = tf.nn.relu(bias, name=scope.name)
     _activation_summary(right_conv2)
@@ -260,16 +263,19 @@ def inference(left_images, right_images):
   with tf.variable_scope('FC1') as scope:
     left_reshape = tf.reshape(left_norm2, [FLAGS.batch_size, -1])
     right_reshape = tf.reshape(right_norm2, [FLAGS.batch_size, -1])
-    conbine = tf.concat(1, [left_reshape, right_reshape]) 
+    combine = tf.concat(1, [left_reshape, right_reshape]) 
     print("left_reshape", left_reshape)
-    print("conbine", conbine)
-    dim = conbine.get_shape()[1].value
+    print("combine", combine)
+    dim = combine.get_shape()[1].value
     weights = _variable_with_weight_decay('weights', [dim, 500],
                                           stddev=1/dim, wd=0.0)
     biases = _variable_on_cpu('biases', [500],
                               tf.constant_initializer(0.0))
-    FC1 = tf.add(tf.matmul(conbine, weights), biases, name=scope.name)
+    FC1 = tf.add(tf.matmul(combine, weights), biases, name=scope.name)
+    FC1 = tf.nn.relu(FC1)
     _activation_summary(FC1)
+    # dropout
+    FC1_drop = tf.nn.dropout(FC1, keep_prob)
 
 
   with tf.variable_scope('FC_Distance') as scope:
@@ -277,7 +283,7 @@ def inference(left_images, right_images):
                                           stddev=1/500, wd=0.0)
     biases = _variable_on_cpu('biases', [110],
                               tf.constant_initializer(0.0))
-    FC_Distance = tf.add(tf.matmul(FC1, weights), biases, name=scope.name)
+    FC_Distance = tf.add(tf.matmul(FC1_drop, weights), biases, name=scope.name)
     _activation_summary(FC_Distance)
 
   return FC_Distance
@@ -326,8 +332,8 @@ def _add_loss_summaries(total_loss):
   for l in losses + [total_loss]:
     # Name each loss as '(raw)' and name the moving average version of the loss
     # as the original loss name.
-    tf.scalar_summary(l.op.name +' (raw)', l)
-    tf.scalar_summary(l.op.name, loss_averages.average(l))
+    tf.summary.scalar(l.op.name +' (raw)', l)
+    tf.summary.scalar(l.op.name, loss_averages.average(l))
 
   return loss_averages_op
 
@@ -355,7 +361,7 @@ def train(total_loss, global_step):
                                   decay_steps,
                                   LEARNING_RATE_DECAY_FACTOR,
                                   staircase=True)
-  tf.scalar_summary('learning_rate', lr)
+  tf.summary.scalar('learning_rate', lr)
 
   # Generate moving averages of all losses and associated summaries.
   loss_averages_op = _add_loss_summaries(total_loss)
@@ -370,12 +376,12 @@ def train(total_loss, global_step):
 
   # Add histograms for trainable variables.
   for var in tf.trainable_variables():
-    tf.histogram_summary(var.op.name, var)
+    tf.summary.histogram(var.op.name, var)
 
   # Add histograms for gradients.
   for grad, var in grads:
     if grad is not None:
-      tf.histogram_summary(var.op.name + '/gradients', grad)
+      tf.summary.histogram(var.op.name + '/gradients', grad)
 
   # Track the moving averages of all trainable variables.
   variable_averages = tf.train.ExponentialMovingAverage(

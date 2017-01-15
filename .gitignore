@@ -1,6 +1,7 @@
-
+lidarnet_fei/save/
 data/
 *.pyc
 *.png
-
-
+model*
+event*
+check*

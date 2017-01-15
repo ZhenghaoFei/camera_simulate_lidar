@@ -32,10 +32,15 @@ FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string('train_dir', '../data/data_train/',
                            """Directory where to write event logs """
                            """and checkpoint.""")
+tf.app.flags.DEFINE_string('save_dir', './save/',
+                           """Directory where to write event logs """
+                           """and checkpoint.""")
 tf.app.flags.DEFINE_integer('max_steps', 1000000,
                             """Number of batches to run.""")
 tf.app.flags.DEFINE_boolean('log_device_placement', False,
                             """Whether to log device placement.""")
+
+DROPOUT_PROB = 0.75 # Dropout, probability to keep units
 
 
 def do_eval(sess):
@@ -61,10 +66,11 @@ def train():
 
     # Get images and labels .
     left_batch, right_batch, lidar_batch = simladar.inputs()
+    keep_prob = tf.constant(DROPOUT_PROB) #dropout (keep probability)
 
     # Build a Graph that computes the logits predictions from the
     # inference model.
-    logits = simladar.inference(left_batch, right_batch)
+    logits = simladar.inference(left_batch, right_batch, keep_prob)
 
     # Calculate loss.
     loss = simladar.loss(logits, lidar_batch)
@@ -74,24 +80,36 @@ def train():
     train_op = simladar.train(loss, global_step)
 
     # Create a saver.
-    saver = tf.train.Saver(tf.all_variables())
+    saver = tf.train.Saver(tf.global_variables())
 
     # Build the summary operation based on the TF collection of Summaries.
-    summary_op = tf.merge_all_summaries()
+    summary_op = tf.summary.merge_all()
 
     # Build an initialization operation to run below.
-    init = tf.initialize_all_variables()
+    init = tf.global_variables_initializer()
 
     # Start running operations on the Graph.
-    sess = tf.Session(config=tf.ConfigProto(
-        log_device_placement=FLAGS.log_device_placement))
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    config.log_device_placement = FLAGS.log_device_placement
+    sess = tf.Session(config=config)
     sess.run(init)
+
+    # load model
+    checkpoint = tf.train.get_checkpoint_state(FLAGS.save_dir)
+
+    if checkpoint and checkpoint.model_checkpoint_path:
+      saver.restore(sess, checkpoint.model_checkpoint_path)
+      print ("Successfully loaded:", checkpoint.model_checkpoint_path)
+      # print("global step: ", global_step.eval())
+    else:
+      print ("Could not find old network weights")
 
     # Start the queue runners.
     tf.train.start_queue_runners(sess=sess)
 
-    summary_writer = tf.train.SummaryWriter(FLAGS.train_dir, sess.graph)
-
+    # summary_writer = tf.train.SummaryWriter(FLAGS.save_dir, sess.graph)
+    summary_writer = tf.summary.FileWriter(FLAGS.save_dir, sess.graph)
     for step in xrange(FLAGS.max_steps):
       start_time = time.time()
       _, loss_value = sess.run([train_op, loss])
@@ -117,7 +135,7 @@ def train():
 
       # Save the model checkpoint periodically.
       if step % 1000 == 0 or (step + 1) == FLAGS.max_steps:
-        checkpoint_path = os.path.join(FLAGS.train_dir, 'model.ckpt')
+        checkpoint_path = os.path.join(FLAGS.save_dir, 'model.ckpt')
         saver.save(sess, checkpoint_path, global_step=step)
 
 

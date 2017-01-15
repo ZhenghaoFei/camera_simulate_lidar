@@ -37,7 +37,7 @@ def scanstore(laser_scan):
     filename = str(laser_scan.header.stamp.to_sec()) + ".txt"
     scan_data = np.asarray(laser_scan.ranges)
     scan_data[scan_data==np.inf] = 10
-    scan_data = scan_data[120:240]    
+    scan_data = scan_data[125:235]    
     # print scan_data.shape
     np.savetxt(filename, scan_data[None,:], delimiter=',',fmt='%.4f',newline=' ')
     rospy.loginfo("laser scan saved as %r", filename)

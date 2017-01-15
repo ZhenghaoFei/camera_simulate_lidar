@@ -13,10 +13,10 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Converts MNIST data to TFRecords file format with Example protos."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+# """Converts MNIST data to TFRecords file format with Example protos."""
+# from __future__ import absolute_import
+# from __future__ import division
+# from __future__ import print_function
 
 import os
 import glob
@@ -31,9 +31,6 @@ tf.app.flags.DEFINE_string('directory', '../data/data_train/',
 tf.app.flags.DEFINE_string('directory_valid', '../data/data_valid/',
                            'Directory to download data files and write the '
                            'converted result')
-tf.app.flags.DEFINE_integer('validation_size', 100,
-                            'Number of examples to separate from the training '
-                            'data for the validation set.')
 FLAGS = tf.app.flags.FLAGS
 
 
@@ -129,10 +126,12 @@ def convert_to(left_images, right_images, lidar_labels, name):
 
 
 def main(argv):
+  print('start')
   # Get first half of training  data.
   file_numbers = get_filenumber(FLAGS.directory)
-  half = int(len(file_numbers)/2)
-  file_numbers1 = file_numbers[:half]
+  quater = int(len(file_numbers)/4)
+
+  file_numbers1 = file_numbers[:quater]
   print('train1 size: ', len(file_numbers1))
   left_image_filename_list1, right_image_filename_list1, lidar_filename_list1 = get_filename_list(file_numbers1, FLAGS.directory)
   # Extract it into numpy arrays.
@@ -142,8 +141,9 @@ def main(argv):
   convert_to(left_images, right_images, lidar_labels, 'train1')
   print('train1 finished')
   del(left_images, right_images, lidar_labels)
+
   # Get second half of training  data.
-  file_numbers2 = file_numbers[half:]
+  file_numbers2 = file_numbers[quater:2*quater]
   print('train2 size: ', len(file_numbers2))
   left_image_filename_list2, right_image_filename_list2, lidar_filename_list2 = get_filename_list(file_numbers2, FLAGS.directory)
   # Extract it into numpy arrays.
@@ -152,6 +152,31 @@ def main(argv):
   lidar_labels = lidar_filename_list_to_nparray(lidar_filename_list2)
   convert_to(left_images, right_images, lidar_labels, 'train2')
   print('train2 finished')
+  del(left_images, right_images, lidar_labels)
+
+  # Get second half of training  data.
+  file_numbers2 = file_numbers[2*quater:3*quater]
+  print('train3 size: ', len(file_numbers2))
+  left_image_filename_list2, right_image_filename_list2, lidar_filename_list2 = get_filename_list(file_numbers2, FLAGS.directory)
+  # Extract it into numpy arrays.
+  left_images = image_filename_list_to_nparray(left_image_filename_list2)
+  right_images = image_filename_list_to_nparray(right_image_filename_list2)
+  lidar_labels = lidar_filename_list_to_nparray(lidar_filename_list2)
+  convert_to(left_images, right_images, lidar_labels, 'train3')
+  print('train3 finished')
+  del(left_images, right_images, lidar_labels)
+
+    # Get second half of training  data.
+  file_numbers2 = file_numbers[3*quater:]
+  print('train4 size: ', len(file_numbers2))
+  left_image_filename_list2, right_image_filename_list2, lidar_filename_list2 = get_filename_list(file_numbers2, FLAGS.directory)
+  # Extract it into numpy arrays.
+  left_images = image_filename_list_to_nparray(left_image_filename_list2)
+  right_images = image_filename_list_to_nparray(right_image_filename_list2)
+  lidar_labels = lidar_filename_list_to_nparray(lidar_filename_list2)
+  convert_to(left_images, right_images, lidar_labels, 'train4')
+  print('train4 finished')
+  del(left_images, right_images, lidar_labels)
 
   # Get validate  data.
   file_numbers_valid = get_filenumber(FLAGS.directory_valid)

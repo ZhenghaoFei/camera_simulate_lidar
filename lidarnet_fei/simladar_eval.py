@@ -29,21 +29,21 @@ import simladar
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string('eval_dir', '../data/data_train/',
+tf.app.flags.DEFINE_string('eval_dir', './save',
                            """Directory where to write event logs.""")
 tf.app.flags.DEFINE_string('eval_data', '../data/data_valid/',
                            """validation data directory""")
-tf.app.flags.DEFINE_string('checkpoint_dir', '../data/data_train/',
+tf.app.flags.DEFINE_string('checkpoint_dir', './save/',
                            """Directory where to read model checkpoints.""")
-tf.app.flags.DEFINE_integer('eval_interval_secs',  10 * 2,
+tf.app.flags.DEFINE_integer('eval_interval_secs',  60 * 5,
                             """How often to run the eval.""")
-tf.app.flags.DEFINE_integer('num_examples', 3020,
+tf.app.flags.DEFINE_integer('num_examples', 1500,
                             """Number of examples to run.""")
 tf.app.flags.DEFINE_boolean('run_once', False,
                          """Whether to run eval only once.""")
 
 
-def eval_once(saver, summary_writer, valid_op, summary_op,pred_validate):
+def eval_once(saver, summary_writer, valid_op, summary_op):
   """Run Eval once.
 
   Args:
@@ -83,10 +83,6 @@ def eval_once(saver, summary_writer, valid_op, summary_op,pred_validate):
         sum_rmse += sess.run(valid_op)
         # true_count += np.sum(predictions)
         step += 1
-        # pred_nparray = pred_validate.eval()
-        # # print (pred_nparray.shape)
-        # name = str(step)+"predict.txt"
-        # np.savetxt(name,pred_nparray)
       rmse = float(sum_rmse/num_iter)
       # Compute precision @ 1.
       # accuracy = accuracy_sum / total_sample_count
@@ -104,7 +100,7 @@ def eval_once(saver, summary_writer, valid_op, summary_op,pred_validate):
 
 def evaluate():
   """Eval CIFAR-10 for a number of steps."""
-  # with tf.Graph().as_default():
+  # with tf.Graph().as_default(),tf.device('/cpu:0') as g:
   with tf.device('/cpu:0') as g:
 
     global_step = tf.Variable(0, trainable=False)
@@ -117,7 +113,10 @@ def evaluate():
     # Build a Graph that computes the logits predictions from the
     # inference model.
     # logits = cifar10.inference(images)
-    pred_validate = simladar.inference(left_batch_validate, right_batch_validate)
+
+    keep_prob = tf.constant(1.) #dropout (keep probability)
+
+    pred_validate = simladar.inference(left_batch_validate, right_batch_validate, keep_prob)
 
     # Calculate predictions.
     # top_k_op = tf.nn.in_top_k(logits, labels, 1)
@@ -135,7 +134,7 @@ def evaluate():
     summary_writer = tf.train.SummaryWriter(FLAGS.eval_dir, g)
 
     while True:
-      eval_once(saver, summary_writer, valid_op, summary_op, pred_validate)
+      eval_once(saver, summary_writer, valid_op, summary_op)
       if FLAGS.run_once:
         break
       time.sleep(FLAGS.eval_interval_secs)
